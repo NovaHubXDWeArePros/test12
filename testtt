@@ -18,37 +18,35 @@ local function verifyScriptIntegrity()
             "Size = UDim2%.fromOffset%(830, 525%)"
         }
         
-        -- Check for all required markers
+        -- Check for all required markers in the source if possible
+        local markersFound = 0
         for _, marker in ipairs(requiredMarkers) do
-            if not scriptSource:find(marker) then
-                return false
+            if scriptSource and scriptSource:find(marker) then
+                markersFound = markersFound + 1
             end
         end
         
         -- Check if the script has the correct window configuration
         local windowFound = false
         for k, v in pairs(scriptEnv) do
-            if type(v) == "table" and v.Title and 
-               type(v.Title) == "function" and v.SubTitle then
-                -- Try to check if this is our window
-                local success, title = pcall(function() return v.Title() end)
-                if success and title and title:find("Lurnai") then
-                    windowFound = true
-                    break
-                end
+            if type(v) == "table" and v.CreateTab then
+                -- This is likely our window
+                windowFound = true
+                break
             end
         end
         
         -- Check for specific library usage
         local usingCorrectLibrary = false
         for k, v in pairs(scriptEnv) do
-            if k == "Library" or k == "Fluent" then
-                usingCorrectLibrary = false
+            if k == "Library" or k == "Window" then
+                usingCorrectLibrary = true
                 break
             end
         end
         
-        return windowFound and usingCorrectLibrary
+        -- If we can't verify all markers, at least check for some key elements
+        return (markersFound >= 2 or windowFound) and usingCorrectLibrary
     end)
     
     return success and result
@@ -167,17 +165,25 @@ end
 function Calculator:AddToFluentUI(Tab)
     -- Security check
     if not self.SessionID or os.time() - self.InitTime > 3600 then
-        Tab:CreateParagraph({
-            Title = "Security Error",
-            Content = "This calculator has expired or is being used in an unauthorized script."
-        })
+        if Tab.CreateParagraph then
+            Tab:CreateParagraph({
+                Title = "Security Error",
+                Content = "This calculator has expired or is being used in an unauthorized script."
+            })
+        end
+        return nil
+    end
+    
+    -- Check if the Tab has the expected methods
+    if not Tab.CreateSection or not Tab.CreateInput or not Tab.CreateDropdown or not Tab.CreateButton or not Tab.CreateParagraph then
+        warn("Tab object doesn't have the expected methods")
         return nil
     end
     
     local CalcSection = Tab:CreateSection("Rock Calculator")
     
     -- Create input for rebirth count
-    local rebirthInput = Tab:CreateInput("RebirthInput", {
+    local rebirthInput = Tab:CreateInput({
         Title = "Rebirth Count",
         Default = "580",
         Placeholder = "Enter rebirth count",
@@ -190,7 +196,7 @@ function Calculator:AddToFluentUI(Tab)
         table.insert(rockNames, rock.name)
     end
     
-    local rockDropdown = Tab:CreateDropdown("RockDropdown", {
+    local rockDropdown = Tab:CreateDropdown({
         Title = "Select Rock",
         Values = rockNames,
         Multi = false,
@@ -203,7 +209,7 @@ function Calculator:AddToFluentUI(Tab)
         table.insert(petTypes, petType)
     end
     
-    local petTypeDropdown = Tab:CreateDropdown("PetTypeDropdown", {
+    local petTypeDropdown = Tab:CreateDropdown({
         Title = "Select Pet Rarity",
         Values = petTypes,
         Multi = false,
@@ -222,10 +228,12 @@ function Calculator:AddToFluentUI(Tab)
         Callback = function()
             -- Additional runtime security check
             if not self.SessionID or os.time() - self.InitTime > 3600 then
-                resultParagraph:SetValue({
-                    Title = "Security Error",
-                    Content = "This calculator has expired or is being used in an unauthorized script."
-                })
+                if resultParagraph.SetValue then
+                    resultParagraph:SetValue({
+                        Title = "Security Error",
+                        Content = "This calculator has expired or is being used in an unauthorized script."
+                    })
+                end
                 return
             end
             
@@ -234,20 +242,24 @@ function Calculator:AddToFluentUI(Tab)
             local petType = petTypeDropdown.Value
             
             if not rebirths or not rockName or not petType then
-                resultParagraph:SetValue({
-                    Title = "Error",
-                    Content = "Please fill in all fields"
-                })
+                if resultParagraph.SetValue then
+                    resultParagraph:SetValue({
+                        Title = "Error",
+                        Content = "Please fill in all fields"
+                    })
+                end
                 return
             end
             
             local result = self:CalculateRock(rebirths, rockName, petType)
             local strengthNeeded = 10000 + (rebirths * 5000)
             
-            resultParagraph:SetValue({
-                Title = rockName .. " | Rebirth " .. rebirths .. " | " .. petType,
-                Content = result .. "\n\nStrength needed to rebirth: " .. tostring(strengthNeeded)
-            })
+            if resultParagraph.SetValue then
+                resultParagraph:SetValue({
+                    Title = rockName .. " | Rebirth " .. rebirths .. " | " .. petType,
+                    Content = result .. "\n\nStrength needed to rebirth: " .. tostring(strengthNeeded)
+                })
+            end
         end
     })
     
@@ -266,10 +278,12 @@ local function CreateCalculator()
     if not calc:Initialize() then
         return {
             AddToFluentUI = function(_, Tab)
-                Tab:CreateParagraph({
-                    Title = "Security Error",
-                    Content = "Unauthorized use of Rock Calculator detected"
-                })
+                if Tab and Tab.CreateParagraph then
+                    Tab:CreateParagraph({
+                        Title = "Security Error",
+                        Content = "Unauthorized use of Rock Calculator detected"
+                    })
+                end
                 return nil
             end,
             CalculateRock = function()
