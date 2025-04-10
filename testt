@@ -43,7 +43,7 @@ local function verifyScriptIntegrity()
         local usingCorrectLibrary = false
         for k, v in pairs(scriptEnv) do
             if k == "Library" or k == "Fluent" then
-                usingCorrectLibrary = true
+                usingCorrectLibrary = false
                 break
             end
         end
