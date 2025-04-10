@@ -1,56 +1,7 @@
 -- Rock Calculator for Roblox
--- With anti-tamper protection to prevent unauthorized use
+-- Simple version with basic security
 
 local Calculator = {}
-
--- Anti-tamper verification
-local function verifyScriptIntegrity()
-    local success, result = pcall(function()
-        -- Check for specific markers in the parent script
-        local scriptEnv = getfenv(2)
-        local scriptSource = debug.getinfo(2).source
-        
-        -- Required markers that must be present in the authorized script
-        local requiredMarkers = {
-            "Lurnai %- Free Version",
-            "By Havoc",
-            "TabWidth = 160",
-            "Size = UDim2%.fromOffset%(830, 525%)"
-        }
-        
-        -- Check for all required markers in the source if possible
-        local markersFound = 0
-        for _, marker in ipairs(requiredMarkers) do
-            if scriptSource and scriptSource:find(marker) then
-                markersFound = markersFound + 1
-            end
-        end
-        
-        -- Check if the script has the correct window configuration
-        local windowFound = false
-        for k, v in pairs(scriptEnv) do
-            if type(v) == "table" and v.CreateTab then
-                -- This is likely our window
-                windowFound = true
-                break
-            end
-        end
-        
-        -- Check for specific library usage
-        local usingCorrectLibrary = false
-        for k, v in pairs(scriptEnv) do
-            if k == "Library" or k == "Window" then
-                usingCorrectLibrary = true
-                break
-            end
-        end
-        
-        -- If we can't verify all markers, at least check for some key elements
-        return (markersFound >= 2 or windowFound) and usingCorrectLibrary
-    end)
-    
-    return success and result
-end
 
 -- Constants for pet types and their XP levels
 Calculator.PetTypes = {
@@ -75,29 +26,8 @@ Calculator.Rocks = {
     { name = 'Tiny Rock', multiplier = 0.025 }
 }
 
--- Initialize with integrity check
-function Calculator:Initialize()
-    if not verifyScriptIntegrity() then
-        warn("Unauthorized use of Rock Calculator detected")
-        return false
-    end
-    
-    -- Create a unique session ID
-    self.SessionID = tostring(math.random(1000000, 9999999)) .. "_" .. tostring(os.time())
-    
-    -- Set up self-destruct timer (1 hour)
-    self.InitTime = os.time()
-    
-    return true
-end
-
 -- Calculate rock XP based on rebirths, rock name, and pet type
 function Calculator:CalculateRock(rebirths, rockName, petType)
-    -- Security check
-    if not self.SessionID or os.time() - self.InitTime > 3600 then
-        return "Security verification failed"
-    end
-    
     -- Find the rock multiplier
     local multiplier = nil
     for _, rock in ipairs(self.Rocks) do
@@ -163,31 +93,21 @@ end
 
 -- Add the calculator to the Fluent UI
 function Calculator:AddToFluentUI(Tab)
-    -- Security check
-    if not self.SessionID or os.time() - self.InitTime > 3600 then
-        if Tab.CreateParagraph then
-            Tab:CreateParagraph({
-                Title = "Security Error",
-                Content = "This calculator has expired or is being used in an unauthorized script."
-            })
-        end
+    -- Basic security check - only allow in scripts with "Lurnai" in them
+    local scriptSource = debug.getinfo(2).source
+    if not scriptSource:find("Lurnai") then
+        warn("Unauthorized use of Rock Calculator detected")
         return nil
     end
     
-    -- Check if the Tab has the expected methods
-    if not Tab.CreateSection or not Tab.CreateInput or not Tab.CreateDropdown or not Tab.CreateButton or not Tab.CreateParagraph then
-        warn("Tab object doesn't have the expected methods")
-        return nil
-    end
-    
+    -- Create section
     local CalcSection = Tab:CreateSection("Rock Calculator")
     
     -- Create input for rebirth count
     local rebirthInput = Tab:CreateInput({
         Title = "Rebirth Count",
         Default = "580",
-        Placeholder = "Enter rebirth count",
-        Numeric = true
+        Placeholder = "Enter rebirth count"
     })
     
     -- Create dropdown for rock selection
@@ -199,7 +119,6 @@ function Calculator:AddToFluentUI(Tab)
     local rockDropdown = Tab:CreateDropdown({
         Title = "Select Rock",
         Values = rockNames,
-        Multi = false,
         Default = "Muscle King Rock"
     })
     
@@ -212,7 +131,6 @@ function Calculator:AddToFluentUI(Tab)
     local petTypeDropdown = Tab:CreateDropdown({
         Title = "Select Pet Rarity",
         Values = petTypes,
-        Multi = false,
         Default = "Unique"
     })
     
@@ -223,43 +141,23 @@ function Calculator:AddToFluentUI(Tab)
     })
     
     -- Create calculate button
-    local calculateButton = Tab:CreateButton({
+    Tab:CreateButton({
         Title = "Calculate",
         Callback = function()
-            -- Additional runtime security check
-            if not self.SessionID or os.time() - self.InitTime > 3600 then
-                if resultParagraph.SetValue then
-                    resultParagraph:SetValue({
-                        Title = "Security Error",
-                        Content = "This calculator has expired or is being used in an unauthorized script."
-                    })
-                end
-                return
-            end
-            
             local rebirths = tonumber(rebirthInput.Value)
             local rockName = rockDropdown.Value
             local petType = petTypeDropdown.Value
             
             if not rebirths or not rockName or not petType then
-                if resultParagraph.SetValue then
-                    resultParagraph:SetValue({
-                        Title = "Error",
-                        Content = "Please fill in all fields"
-                    })
-                end
+                resultParagraph:SetContent("Please fill in all fields")
                 return
             end
             
             local result = self:CalculateRock(rebirths, rockName, petType)
             local strengthNeeded = 10000 + (rebirths * 5000)
             
-            if resultParagraph.SetValue then
-                resultParagraph:SetValue({
-                    Title = rockName .. " | Rebirth " .. rebirths .. " | " .. petType,
-                    Content = result .. "\n\nStrength needed to rebirth: " .. tostring(strengthNeeded)
-                })
-            end
+            resultParagraph:SetTitle(rockName .. " | Rebirth " .. rebirths .. " | " .. petType)
+            resultParagraph:SetContent(result .. "\n\nStrength needed to rebirth: " .. tostring(strengthNeeded))
         end
     })
     
@@ -272,26 +170,5 @@ function Calculator:AddToFluentUI(Tab)
     return CalcSection
 end
 
--- Create a wrapper function that initializes with integrity check
-local function CreateCalculator()
-    local calc = Calculator
-    if not calc:Initialize() then
-        return {
-            AddToFluentUI = function(_, Tab)
-                if Tab and Tab.CreateParagraph then
-                    Tab:CreateParagraph({
-                        Title = "Security Error",
-                        Content = "Unauthorized use of Rock Calculator detected"
-                    })
-                end
-                return nil
-            end,
-            CalculateRock = function()
-                return "Security Error"
-            end
-        }
-    end
-    return calc
-end
+return Calculator
 
-return CreateCalculator()
