@@ -46,15 +46,23 @@ function Calculator:CalculateRock(rebirths, rockName, petType)
     -- Calculate total XP based on rebirths and rock multiplier
     local total = (rebirths + 20) * multiplier
     
+    -- Format the result string with rock, rebirth, and pet type info
+    local resultPrefix = "Calculation Results\n" .. rockName .. " | Rebirth " .. rebirths .. " | " .. petType .. "\n"
+    
+    -- Check if total has a decimal part
+    if total ~= math.floor(total) then
+        return resultPrefix .. "Not Glitchable\nStrength needed to rebirth: 25000"
+    end
+    
     -- Check if total exceeds max level
     if total > xpLevels[#xpLevels] then
-        return "UnGlitchable (exceeds max level)"
+        return resultPrefix .. "Not Glitchable\nStrength needed to rebirth: 25000"
     end
     
     -- Check if total is exactly one of the XP levels (perfect level up)
     for i, xp in ipairs(xpLevels) do
         if total == xp then
-            return "Level 1, 0xp"
+            return resultPrefix .. "Level 1, 0xp"
         end
     end
     
@@ -68,7 +76,7 @@ function Calculator:CalculateRock(rebirths, rockName, petType)
     end
     
     if not nextXP then
-        return "UnGlitchable (calculation error)"
+        return resultPrefix .. "Not Glitchable\nStrength needed to rebirth: 25000"
     end
     
     -- Calculate the first difference
@@ -91,7 +99,7 @@ function Calculator:CalculateRock(rebirths, rockName, petType)
     
     local remainingXP = math.floor(firstDiff - baseXP)
     
-    return "Level " .. level .. ", " .. remainingXP .. "xp"
+    return resultPrefix .. "Level " .. level .. ", " .. remainingXP .. "xp"
 end
 
 return Calculator
