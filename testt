@@ -1,5 +1,5 @@
 -- Rock Calculator for Roblox
--- Simple version with basic security
+-- Compatible with Fluent Renewed
 
 local Calculator = {}
 
@@ -93,9 +93,9 @@ end
 
 -- Add the calculator to the Fluent UI
 function Calculator:AddToFluentUI(Tab)
-    -- Basic security check - only allow in scripts with "Lurnai" in them
+    -- Basic security check - only allow in scripts with "Lurnai" or "Fluent" in them
     local scriptSource = debug.getinfo(2).source
-    if not scriptSource:find("Lurnai") then
+    if not (scriptSource:find("Lurnai") or scriptSource:find("Fluent")) then
         warn("Unauthorized use of Rock Calculator detected")
         return nil
     end
@@ -104,10 +104,11 @@ function Calculator:AddToFluentUI(Tab)
     local CalcSection = Tab:CreateSection("Rock Calculator")
     
     -- Create input for rebirth count
-    local rebirthInput = Tab:CreateInput({
+    local rebirthInput = Tab:CreateInput("RebirthInput", {
         Title = "Rebirth Count",
         Default = "580",
-        Placeholder = "Enter rebirth count"
+        Placeholder = "Enter rebirth count",
+        Numeric = true
     })
     
     -- Create dropdown for rock selection
@@ -116,9 +117,10 @@ function Calculator:AddToFluentUI(Tab)
         table.insert(rockNames, rock.name)
     end
     
-    local rockDropdown = Tab:CreateDropdown({
+    local rockDropdown = Tab:CreateDropdown("RockDropdown", {
         Title = "Select Rock",
         Values = rockNames,
+        Multi = false,
         Default = "Muscle King Rock"
     })
     
@@ -128,14 +130,15 @@ function Calculator:AddToFluentUI(Tab)
         table.insert(petTypes, petType)
     end
     
-    local petTypeDropdown = Tab:CreateDropdown({
+    local petTypeDropdown = Tab:CreateDropdown("PetTypeDropdown", {
         Title = "Select Pet Rarity",
         Values = petTypes,
+        Multi = false,
         Default = "Unique"
     })
     
     -- Create result paragraph
-    local resultParagraph = Tab:CreateParagraph({
+    local resultParagraph = Tab:CreateParagraph("CalcResult", {
         Title = "Calculation Result",
         Content = "Press Calculate to see results"
     })
@@ -149,20 +152,25 @@ function Calculator:AddToFluentUI(Tab)
             local petType = petTypeDropdown.Value
             
             if not rebirths or not rockName or not petType then
-                resultParagraph:SetContent("Please fill in all fields")
+                resultParagraph:SetValue({
+                    Title = "Error",
+                    Content = "Please fill in all fields"
+                })
                 return
             end
             
             local result = self:CalculateRock(rebirths, rockName, petType)
             local strengthNeeded = 10000 + (rebirths * 5000)
             
-            resultParagraph:SetTitle(rockName .. " | Rebirth " .. rebirths .. " | " .. petType)
-            resultParagraph:SetContent(result .. "\n\nStrength needed to rebirth: " .. tostring(strengthNeeded))
+            resultParagraph:SetValue({
+                Title = rockName .. " | Rebirth " .. rebirths .. " | " .. petType,
+                Content = result .. "\n\nStrength needed to rebirth: " .. tostring(strengthNeeded)
+            })
         end
     })
     
     -- Add watermark
-    Tab:CreateParagraph({
+    Tab:CreateParagraph("Watermark", {
         Title = "© Lurnai by Havoc",
         Content = "Unauthorized use of this calculator is prohibited."
     })
@@ -171,4 +179,3 @@ function Calculator:AddToFluentUI(Tab)
 end
 
 return Calculator
-
