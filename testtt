@@ -93,13 +93,6 @@ end
 
 -- Add the calculator to the Fluent UI
 function Calculator:AddToFluentUI(Tab)
-    -- Basic security check - only allow in scripts with "Lurnai" or "Fluent" in them
-    local scriptSource = debug.getinfo(2).source
-    if not (scriptSource:find("Lurnai") or scriptSource:find("Fluent")) then
-        warn("Unauthorized use of Rock Calculator detected")
-        return nil
-    end
-    
     -- Create section
     local CalcSection = Tab:CreateSection("Rock Calculator")
     
