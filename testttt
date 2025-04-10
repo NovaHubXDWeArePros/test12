@@ -23,28 +23,19 @@ Calculator.Rocks = {
     { name = 'Tiny Rock', multiplier = 0.025 }
 }
 
--- Create a lookup table for rocks to improve performance
-Calculator.RockLookup = {}
-for _, rock in ipairs(Calculator.Rocks) do
-    Calculator.RockLookup[rock.name] = rock.multiplier
-end
-
 -- Calculate rock XP based on rebirths, rock name, and pet type
 function Calculator:CalculateRock(rebirths, rockName, petType)
     -- Find the rock multiplier
-    local multiplier = self.RockLookup[rockName]
+    local multiplier = nil
+    for _, rock in ipairs(self.Rocks) do
+        if rock.name == rockName then
+            multiplier = rock.multiplier
+            break
+        end
+    end
+    
     if not multiplier then
-        -- Try to find it in the array if not in lookup
-        for _, rock in ipairs(self.Rocks) do
-            if rock.name == rockName then
-                multiplier = rock.multiplier
-                break
-            end
-        end
-        
-        if not multiplier then
-            return "Rock not found"
-        end
+        return "Rock not found"
     end
     
     local xpLevels = self.PetTypes[petType]
@@ -56,8 +47,15 @@ function Calculator:CalculateRock(rebirths, rockName, petType)
     local total = (rebirths + 20) * multiplier
     
     -- Check if total exceeds max level
-    if total >= xpLevels[#xpLevels] then
+    if total > xpLevels[#xpLevels] then
         return "UnGlitchable (exceeds max level)"
+    end
+    
+    -- Check if total is exactly one of the XP levels (perfect level up)
+    for i, xp in ipairs(xpLevels) do
+        if total == xp then
+            return "Level 1, 0xp"
+        end
     end
     
     -- Find the next XP level
@@ -73,34 +71,25 @@ function Calculator:CalculateRock(rebirths, rockName, petType)
         return "UnGlitchable (calculation error)"
     end
     
-    -- Calculate the difference between next XP level and total
-    local difference = nextXP - total
+    -- Calculate the first difference
+    local firstDiff = nextXP - total
     
-    -- Check if difference is exactly 0 (perfect level up)
-    if difference == 0 then
-        -- Find the index of nextXP
-        local nextLevel = 1
-        for i, xp in ipairs(xpLevels) do
-            if xp == nextXP then
-                nextLevel = i
-                break
-            end
-        end
-        return "Level " .. nextLevel .. ", 0xp"
-    end
-    
-    -- Find the level based on where difference falls in the XP levels
+    -- Find the level based on where firstDiff falls in the XP levels
     local level = 1
-    for i = 2, #xpLevels do
-        if difference <= xpLevels[i] then
+    for i, xp in ipairs(xpLevels) do
+        if firstDiff <= xp then
             level = i - 1
             break
         end
     end
     
     -- Calculate the remaining XP
-    local baseXP = xpLevels[level]
-    local remainingXP = math.floor(difference - baseXP)
+    local baseXP = 0
+    if level > 0 and level < #xpLevels then
+        baseXP = xpLevels[level]
+    end
+    
+    local remainingXP = math.floor(firstDiff - baseXP)
     
     return "Level " .. level .. ", " .. remainingXP .. "xp"
 end
