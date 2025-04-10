@@ -1,6 +1,4 @@
--- Rock Calculator for Roblox
--- Compatible with Fluent Renewed
-
+-- Simple Rock Calculator for Roblox
 local Calculator = {}
 
 -- Constants for pet types and their XP levels
@@ -53,13 +51,6 @@ function Calculator:CalculateRock(rebirths, rockName, petType)
         return "UnGlitchable (exceeds max level)"
     end
     
-    -- Check if total is exactly at a level threshold
-    for i, xp in ipairs(xpLevels) do
-        if math.abs(xp - total) < 0.001 then  -- Using small epsilon for float comparison
-            return "Level " .. (i-1) .. ", 0xp"
-        end
-    end
-    
     -- Find the current level and remaining XP
     local level = 1
     local remainingXP = 0
@@ -72,29 +63,13 @@ function Calculator:CalculateRock(rebirths, rockName, petType)
         end
     end
     
-    -- Find the level of the remaining XP
-    local subLevel = 1
-    for i, xp in ipairs(xpLevels) do
-        if remainingXP >= xp then
-            subLevel = i
-        else
-            break
-        end
-    end
-    
-    if subLevel > 1 then
-        local baseXP = xpLevels[subLevel-1]
-        local actualXP = remainingXP - baseXP
-        return "Level " .. (subLevel-1) .. ", " .. math.floor(actualXP) .. "xp"
-    else
-        return "Level " .. subLevel .. ", " .. math.floor(remainingXP) .. "xp"
-    end
+    return "Level " .. level .. ", " .. math.floor(remainingXP) .. "xp"
 end
 
 -- Add the calculator to the Fluent UI
 function Calculator:AddToFluentUI(Tab)
     -- Create section
-    local CalcSection = Tab:CreateSection("Rock Calculator")
+    Tab:CreateSection("Rock Calculator")
     
     -- Create input for rebirth count
     local rebirthInput = Tab:CreateInput("RebirthInput", {
@@ -167,8 +142,6 @@ function Calculator:AddToFluentUI(Tab)
         Title = "© Lurnai by Havoc",
         Content = "Unauthorized use of this calculator is prohibited."
     })
-    
-    return CalcSection
 end
 
 return Calculator
