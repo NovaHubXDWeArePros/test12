@@ -64,7 +64,7 @@ function Calculator:CalculateRock(rebirths, rockName, petType)
     end
     
     return "Level " .. level .. ", " .. math.floor(remainingXP) .. "xp"
-end
+}
 
 -- Add the calculator to the Fluent UI
 function Calculator:AddToFluentUI(Tab)
@@ -105,10 +105,15 @@ function Calculator:AddToFluentUI(Tab)
         Default = "Unique"
     })
     
-    -- Create result paragraph
-    local resultParagraph = Tab:CreateParagraph("CalcResult", {
+    -- Create result paragraphs
+    local resultTitle = Tab:CreateParagraph("CalcResultTitle", {
         Title = "Calculation Result",
         Content = "Press Calculate to see results"
+    })
+    
+    local resultContent = Tab:CreateParagraph("CalcResultContent", {
+        Title = "",
+        Content = ""
     })
     
     -- Create calculate button
@@ -120,20 +125,16 @@ function Calculator:AddToFluentUI(Tab)
             local petType = petTypeDropdown.Value
             
             if not rebirths or not rockName or not petType then
-                resultParagraph:SetValue({
-                    Title = "Error",
-                    Content = "Please fill in all fields"
-                })
+                resultTitle:SetValue("Error")
+                resultContent:SetValue("Please fill in all fields")
                 return
             end
             
             local result = self:CalculateRock(rebirths, rockName, petType)
             local strengthNeeded = 10000 + (rebirths * 5000)
             
-            resultParagraph:SetValue({
-                Title = rockName .. " | Rebirth " .. rebirths .. " | " .. petType,
-                Content = result .. "\n\nStrength needed to rebirth: " .. tostring(strengthNeeded)
-            })
+            resultTitle:SetValue(rockName .. " | Rebirth " .. rebirths .. " | " .. petType)
+            resultContent:SetValue(result .. "\n\nStrength needed to rebirth: " .. tostring(strengthNeeded))
         end
     })
     
