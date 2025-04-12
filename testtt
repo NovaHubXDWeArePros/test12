@@ -1,36 +1,213 @@
--- Protected Calculator for Lurnai UI
+-- Protected Calculator for Lurnai UI with enhanced security
 local Calculator = {}
 
--- Store the data directly
-Calculator.PetTypes = {
-    Unique = {0, 1250, 3750, 7500, 12500, 18750, 26250, 35000, 45000, 56250, 68750, 82500, 97500, 113750, 131250, 150000, 170000, 191250, 213750, 237500},
-    Epic = {0, 1000, 3000, 6000, 10000, 15000, 21000, 28000, 36000, 45000, 55000, 66000, 78000, 91000, 105000, 120000, 136000, 153000, 171000, 190000, 210000},
-    Rare = {0, 750, 2250, 4500, 7500, 11250, 15750, 21000, 27000, 33750, 41250, 49500, 58500, 68250, 78750, 90000, 102000, 114750, 128250, 142500, 157500},
-    Advanced = {0, 500, 1500, 3000, 5000, 7500, 10500, 14000, 18000, 22500, 27500, 33000, 39000, 45500, 52500, 60000, 68000, 76500, 85500, 95000, 105000},
-    Basic = {0, 250, 750, 1500, 2500, 3750, 5250, 7000, 9000, 11250, 13750, 16500, 19500, 22750, 26250, 30000, 34000, 38250, 42750, 47500, 52500},
-    ["Unique Aura"] = {0, 3000, 7500, 13500, 21000, 30000, 40500, 52500, 66000, 81000, 97500, 115500, 135000, 156000, 178500, 202500, 228000, 255000, 283500, 313500, 345000}
-}
+-- Function to flood console if tampering is detected
+local function floodConsole()
+    for i = 1, 1000 do
+        print("")
+    end
+end
 
-Calculator.Rocks = {
-    { name = 'Jungle Rock', multiplier = 16.25 },
-    { name = 'Muscle King Rock', multiplier = 12.5 },
-    { name = 'Legends Rock', multiplier = 2.5 },
-    { name = 'Inferno Rock', multiplier = 1.125 },
-    { name = 'Mystic Rock', multiplier = 0.75 },
-    { name = 'Frozen Rock', multiplier = 0.375 },
-    { name = 'Golden Rock', multiplier = 0.2 },
-    { name = 'Large Rock', multiplier = 0.075 },
-    { name = 'Punching Rock', multiplier = 0.05 },
-    { name = 'Tiny Rock', multiplier = 0.025 }
+-- Check if this is being loaded by the authorized UI
+local function isAuthorizedLoader()
+    local success, result = pcall(function()
+        -- Get the call stack to check who's loading this script
+        local callStack = debug.traceback()
+        
+        -- Check for specific identifiers that should only exist in your UI
+        local isLurnai = callStack:find("Lurnai") ~= nil
+        local isHavoc = callStack:find("By Havoc") ~= nil
+        local hasCorrectTitle = callStack:find("Lurnai %- Free Version") ~= nil
+        
+        -- Check for the specific UI library you're using
+        local hasFluentUI = callStack:find("Fluent%-Renewed") ~= nil
+        
+        -- Check if the script is being loaded from the correct context
+        local loadedFromCorrectContext = 
+            isLurnai and isHavoc and hasFluentUI and hasCorrectTitle
+        
+        if not loadedFromCorrectContext then
+            floodConsole()
+            return false
+        end
+        
+        return true
+    end)
+    
+    return success and result
+end
+
+-- Generate a unique key based on the environment
+local function generateAuthKey()
+    local env = getfenv(2)
+    local authComponents = {
+        os.time(),
+        tostring(env),
+        "Lurnai_Havoc_Auth"
+    }
+    
+    local authString = table.concat(authComponents, "_")
+    local authKey = ""
+    
+    for i = 1, #authString do
+        authKey = authKey .. string.char(string.byte(authString:sub(i,i)) + 3)
+    end
+    
+    return authKey
+end
+
+-- Only initialize if loaded by the authorized UI
+if not isAuthorizedLoader() then
+    floodConsole()
+    -- Return a fake "broken" calculator that appears to be non-functional
+    return {
+        CalculateRock = function() 
+            floodConsole()
+            return "Calculator is currently experiencing issues. Please try again later."
+        end,
+        Rocks = {},
+        PetTypes = {},
+        _isBroken = true, -- Flag to indicate this is a fake broken version
+        VerifyAuthenticity = function() return false end
+    }
+end
+
+-- Create a secure environment
+local secureEnv = {}
+local realData = {
+    PetTypes = {
+        Unique = {0, 1250, 3750, 7500, 12500, 18750, 26250, 35000, 45000, 56250, 68750, 82500, 97500, 113750, 131250, 150000, 170000, 191250, 213750, 237500},
+        Epic = {0, 1000, 3000, 6000, 10000, 15000, 21000, 28000, 36000, 45000, 55000, 66000, 78000, 91000, 105000, 120000, 136000, 153000, 171000, 190000, 210000},
+        Rare = {0, 750, 2250, 4500, 7500, 11250, 15750, 21000, 27000, 33750, 41250, 49500, 58500, 68250, 78750, 90000, 102000, 114750, 128250, 142500, 157500},
+        Advanced = {0, 500, 1500, 3000, 5000, 7500, 10500, 14000, 18000, 22500, 27500, 33000, 39000, 45500, 52500, 60000, 68000, 76500, 85500, 95000, 105000},
+        Basic = {0, 250, 750, 1500, 2500, 3750, 5250, 7000, 9000, 11250, 13750, 16500, 19500, 22750, 26250, 30000, 34000, 38250, 42750, 47500, 52500},
+        ["Unique Aura"] = {0, 3000, 7500, 13500, 21000, 30000, 40500, 52500, 66000, 81000, 97500, 115500, 135000, 156000, 178500, 202500, 228000, 255000, 283500, 313500, 345000}
+    },
+    Rocks = {
+        { name = 'Jungle Rock', multiplier = 16.25 },
+        { name = 'Muscle King Rock', multiplier = 12.5 },
+        { name = 'Legends Rock', multiplier = 2.5 },
+        { name = 'Inferno Rock', multiplier = 1.125 },
+        { name = 'Mystic Rock', multiplier = 0.75 },
+        { name = 'Frozen Rock', multiplier = 0.375 },
+        { name = 'Golden Rock', multiplier = 0.2 },
+        { name = 'Large Rock', multiplier = 0.075 },
+        { name = 'Punching Rock', multiplier = 0.05 },
+        { name = 'Tiny Rock', multiplier = 0.025 }
+    }
 }
 
 -- Add a unique identifier that the UI can check
-Calculator._lurnaiAuthKey = "havoc_lurnai_" .. tostring(os.time())
+Calculator._lurnaiAuthKey = generateAuthKey()
+Calculator._loadTime = os.time()
+Calculator._verificationHash = string.format("%x", math.floor(os.time() * 3.14159))
+Calculator._isBroken = false -- Flag to indicate this is the real version
 
--- The calculation function
+-- Create proxy tables to prevent direct access to data
+local proxyMetatable = {
+    __index = function(t, k)
+        local callStack = debug.traceback()
+        if not callStack:find("Lurnai") then
+            floodConsole()
+            return nil
+        end
+        return rawget(secureEnv, k)
+    end,
+    __newindex = function(t, k, v)
+        floodConsole()
+        return nil
+    end,
+    __metatable = "Locked metatable"
+}
+
+-- Set up the proxies
+secureEnv.PetTypes = {}
+secureEnv.Rocks = {}
+
+-- Copy data to secure environment
+for k, v in pairs(realData.PetTypes) do
+    secureEnv.PetTypes[k] = v
+end
+
+for i, v in ipairs(realData.Rocks) do
+    secureEnv.Rocks[i] = v
+end
+
+-- Expose the data through proxies
+Calculator.PetTypes = setmetatable({}, {
+    __index = function(t, k)
+        local callStack = debug.traceback()
+        if not callStack:find("Lurnai") or not callStack:find("By Havoc") then
+            floodConsole()
+            return nil
+        end
+        return secureEnv.PetTypes[k]
+    end,
+    __newindex = function() floodConsole() end,
+    __metatable = "Locked metatable"
+})
+
+Calculator.Rocks = setmetatable({}, {
+    __index = function(t, k)
+        local callStack = debug.traceback()
+        if not callStack:find("Lurnai") or not callStack:find("By Havoc") then
+            floodConsole()
+            return nil
+        end
+        return secureEnv.Rocks[k]
+    end,
+    __newindex = function() floodConsole() end,
+    __metatable = "Locked metatable",
+    __len = function() return #secureEnv.Rocks end,
+    __pairs = function(t)
+        local callStack = debug.traceback()
+        if not callStack:find("Lurnai") or not callStack:find("By Havoc") then
+            floodConsole()
+            return function() return nil end
+        end
+        
+        local i = 0
+        return function()
+            i = i + 1
+            if i <= #secureEnv.Rocks then
+                return i, secureEnv.Rocks[i]
+            end
+        end
+    end,
+    __ipairs = function(t)
+        local callStack = debug.traceback()
+        if not callStack:find("Lurnai") or not callStack:find("By Havoc") then
+            floodConsole()
+            return function() return nil end
+        end
+        
+        local i = 0
+        return function()
+            i = i + 1
+            if i <= #secureEnv.Rocks then
+                return i, secureEnv.Rocks[i]
+            end
+        end
+    end
+})
+
+-- The calculation function with enhanced security
 function Calculator:CalculateRock(rebirths, rockName, petType)
+    -- Check if being called from the right context
+    local callStack = debug.traceback()
+    if not callStack:find("Lurnai") or not callStack:find("By Havoc") then
+        floodConsole()
+        return "Access denied"
+    end
+    
+    -- Verify the auth key hasn't been tampered with
+    if not self._lurnaiAuthKey or self._lurnaiAuthKey:len() < 10 then
+        floodConsole()
+        return "Authentication failed"
+    end
+    
     local multiplier = nil
-    for _, rock in ipairs(self.Rocks) do
+    for _, rock in ipairs(secureEnv.Rocks) do
         if rock.name == rockName then
             multiplier = rock.multiplier
             break
@@ -41,7 +218,7 @@ function Calculator:CalculateRock(rebirths, rockName, petType)
         return "Rock not found"
     end
     
-    local xpLevels = self.PetTypes[petType]
+    local xpLevels = secureEnv.PetTypes[petType]
     if not xpLevels then
         return "Pet type not found"
     end
@@ -104,7 +281,31 @@ end
 
 -- Add a verification method that the UI can call
 function Calculator:VerifyAuthenticity()
+    local callStack = debug.traceback()
+    if not callStack:find("Lurnai") or not callStack:find("By Havoc") then
+        floodConsole()
+        return false
+    end
+    
     return true
 end
+
+-- Prevent the calculator from being modified
+setmetatable(Calculator, {
+    __index = function(t, k)
+        if k == "CalculateRock" or k == "VerifyAuthenticity" or 
+           k == "PetTypes" or k == "Rocks" or k == "_isBroken" or
+           k == "_lurnaiAuthKey" or k == "_loadTime" or k == "_verificationHash" then
+            return rawget(t, k)
+        end
+        floodConsole()
+        return nil
+    end,
+    __newindex = function(t, k, v)
+        floodConsole()
+        return nil
+    end,
+    __metatable = "Locked metatable"
+})
 
 return Calculator
