@@ -1,13 +1,6 @@
 --[[
     Protected Calculator Module for Lurnai
     © 2025 Havoc - All Rights Reserved
-    
-    This script uses multiple layers of protection:
-    1. Environment verification
-    2. Call stack validation
-    3. Anti-tampering checks
-    4. Obfuscated critical data
-    5. Self-verification mechanisms
 ]]
 
 -- Create a secure environment with closure protection
@@ -24,6 +17,38 @@ local Calculator = (function()
         FLOOD_COUNT = 500
     }
     
+    -- Set up data for the calculator
+    module.Rocks = {
+        {name = "Muscle Rock", multiplier = 1},
+        {name = "Strength Rock", multiplier = 2},
+        {name = "Legendary Rock", multiplier = 5},
+        {name = "Mythical Rock", multiplier = 10},
+        {name = "Omega Rock", multiplier = 20},
+        {name = "Muscle King Rock", multiplier = 50}
+    }
+    
+    module.PetTypes = {
+        ["Common"] = 1.1,
+        ["Uncommon"] = 1.2,
+        ["Rare"] = 1.5,
+        ["Epic"] = 2,
+        ["Legendary"] = 3,
+        ["Mythical"] = 5,
+        ["Unique"] = 10
+    }
+    
+    -- Internal state
+    local _internal = {
+        loadTime = os.time(),
+        verificationHash = string.char(76,117,114,110,97,105,95,86,101,114,105,102,105,101,100), -- "Lurnai_Verified"
+        isBroken = false
+    }
+    
+    -- Expose some internal state for verification
+    module._loadTime = _internal.loadTime
+    module._verificationHash = _internal.verificationHash
+    module._isBroken = _internal.isBroken
+    
     -- Utility functions
     local function floodConsole()
         for i = 1, SECURITY.FLOOD_COUNT do
@@ -31,405 +56,186 @@ local Calculator = (function()
         end
     end
     
-    local function generateHash(str)
-        local hash = 0
-        for i = 1, #str do
-            hash = ((hash << 5) - hash) + string.byte(str, i)
-            hash = hash & 0xFFFFFFFF
-        end
-        return hash
-    end
-    
-    -- Create a unique identifier for this instance
-    local instanceId = tostring(os.time()) .. "_" .. tostring(math.random(1000, 9999))
-    
-    -- Store the original metatable functions to prevent tampering
-    local originalMetamethods = {
-        setmetatable = setmetatable,
-        getmetatable = getmetatable,
-        rawget = rawget,
-        rawset = rawset,
-        pairs = pairs,
-        ipairs = ipairs
-    }
-    
-    -- Store the original environment functions
+    -- Store original environment functions to prevent hooking
     local originalEnvFunctions = {
-        getfenv = getfenv,
-        setfenv = setfenv,
-        loadstring = loadstring,
         debug = {
+            getinfo = debug.getinfo,
             traceback = debug.traceback,
-            getinfo = debug.getinfo
+            getupvalue = debug.getupvalue,
+            getlocal = debug.getlocal
+        },
+        string = {
+            find = string.find,
+            match = string.match,
+            sub = string.sub,
+            char = string.char
+        },
+        table = {
+            concat = table.concat
         }
     }
     
-    -- Verify the execution environment
+    -- Verify the environment hasn't been tampered with
     local function verifyEnvironment()
-        -- Check if critical functions have been tampered with
-        if setmetatable ~= originalMetamethods.setmetatable or
-           getmetatable ~= originalMetamethods.getmetatable or
-           rawget ~= originalMetamethods.rawget or
-           rawset ~= originalMetamethods.rawset or
-           pairs ~= originalMetamethods.pairs or
-           ipairs ~= originalMetamethods.ipairs or
-           getfenv ~= originalEnvFunctions.getfenv or
-           setfenv ~= originalEnvFunctions.setfenv or
-           loadstring ~= originalEnvFunctions.loadstring or
-           debug.traceback ~= originalEnvFunctions.debug.traceback or
-           debug.getinfo ~= originalEnvFunctions.debug.getinfo then
+        -- Check if debug functions have been tampered with
+        if debug.getinfo ~= originalEnvFunctions.debug.getinfo or
+           debug.traceback ~= originalEnvFunctions.debug.traceback then
+            return false
+        end
+        
+        -- Check if string functions have been tampered with
+        if string.find ~= originalEnvFunctions.string.find or
+           string.match ~= originalEnvFunctions.string.match or
+           string.sub ~= originalEnvFunctions.string.sub then
             return false
         end
         
         return true
     end
     
-    -- Check if this is being loaded by the authorized UI
-    local function isAuthorizedLoader()
+    -- Generate a hash for data integrity checks
+    local function generateHash(data)
+        local hash = 0
+        for i = 1, #data do
+            hash = (hash * 31 + string.byte(data, i)) % 2^32
+        end
+        return hash
+    end
+    
+    -- Store real data for integrity checks
+    local realData = {
+        rocks = module.Rocks,
+        petTypes = module.PetTypes
+    }
+    local dataHash = generateHash(tostring(realData))
+    
+    -- Verify the UI script contains all required verification markers
+    local function verifyUIScript()
         local success, result = pcall(function()
-            -- Get the call stack to check who's loading this script
-            local callStack = originalEnvFunctions.debug.traceback()
+            -- Get the call stack to find the UI script
+            local callStack = debug.traceback()
             
-            -- Check for specific identifiers that should only exist in your UI
-            local isLurnai = callStack:find("Lurnai") ~= nil
-            local isHavoc = callStack:find(SECURITY.AUTHOR) ~= nil
-            local hasCorrectTitle = callStack:find(SECURITY.SCRIPT_NAME:gsub("%-", "%%-")) ~= nil
-            local hasFluentUI = callStack:find(SECURITY.UI_LIB) ~= nil
+            -- Required verification markers that must be present in the UI script
+            local requiredMarkers = {
+                "7hgf_vrf: 0x8A2B3C4D",
+                "q9zx_vrf: 0xF1E2D3C4",
+                "3kpt_vrf: 0x1A2B3C4D",
+                "p5jq_vrf: 0xE5D6C7B8",
+                "8rgt_vrf: 0x9A8B7C6D",
+                "2xnm_vrf: 0x5F4E3D2C",
+                "6yht_vrf: 0xB1A2C3D4",
+                "4zxc_vrf: 0x7D8E9F0A",
+                "1jkl_vrf: 0x2B3C4D5E",
+                "9qwe_vrf: 0xC1D2E3F4",
+                "5rty_vrf: 0x3E4F5A6B",
+                "0uio_vrf: 0xD4C5B6A7",
+                "7asd_vrf: 0x8F9E0D1C",
+                "2fgh_vrf: 0x5A6B7C8D",
+                "8jkl_vrf: 0x9E0F1A2B",
+                "3zxc_vrf: 0x1D2E3F4A",
+                "6vbn_vrf: 0xB4C5D6E7",
+                "1mnb_vrf: 0x2E3F4A5B",
+                "9poi_vrf: 0xC4D5E6F7",
+                "4lkj_vrf: 0x7G8H9I0J",
+                "5hgf_vrf: 0x3K4L5M6N",
+                "0dsa_vrf: 0xD7E8F9G0",
+                "7yui_vrf: 0x8O9P0Q1R",
+                "2tre_vrf: 0x5S6T7U8V",
+                "8iop_vrf: 0x9W0X1Y2Z",
+                "3qwe_vrf: 0x1A2B3C4D5",
+                "6rty_vrf: 0xB5C6D7E8F",
+                "1uio_vrf: 0x2G3H4I5J6",
+                "9asd_vrf: 0xC7D8E9F0G",
+                "4fgh_vrf: 0x7K8L9M0N1",
+                "5jkl_vrf: 0x3O4P5Q6R7",
+                "0zxc_vrf: 0xD9E0F1G2H",
+                "7vbn_vrf: 0x8S9T0U1V2",
+                "2mnb_vrf: 0x5W6X7Y8Z9",
+                "8poi_vrf: 0x9A0B1C2D3E",
+                "3lkj_vrf: 0x1F2G3H4I5J",
+                "6hgf_vrf: 0xB4C5D6E7F8",
+                "1dsa_vrf: 0x2K3L4M5N6O",
+                "9yui_vrf: 0xC7D8E9F0G1",
+                "4tre_vrf: 0x7P8Q9R0S1T",
+                "0iop_vrf: 0xD2E3F4G5H6",
+                "7qwe_vrf: 0x8U9V0W1X2Y",
+                "2rty_vrf: 0x5N6O7P8Q9R",
+                "8uio_vrf: 0x9S0T1U2V3W",
+                "3asd_vrf: 0x1X2Y3Z4A5B",
+                "6fgh_vrf: 0xB8C9D0E1F2",
+                "1jkl_vrf: 0x2G3H4I5J6K",
+                "9zxc_vrf: 0xC3D4E5F6G7",
+                "4vbn_vrf: 0x7L8M9N0O1P",
+                "5mnb_vrf: 0x3Q4R5S6T7U",
+                "0poi_vrf: 0xD8E9F0G1H2",
+                "7lkj_vrf: 0x8V9W0X1Y2Z"
+            }
             
-            -- Get the script name that's loading this
-            local info = originalEnvFunctions.debug.getinfo(3, "S")
-            local scriptName = info and info.source or ""
+            -- Try to get the UI script source
+            local uiScriptSource = ""
+            local success, err = pcall(function()
+                -- This is a bit tricky - we need to find the UI script in the call stack
+                -- and then get its source. This is a simplified approach.
+                for i = 2, 5 do  -- Check a few levels up the call stack
+                    local info = debug.getinfo(i, "S")
+                    if info and info.source then
+                        -- Found a potential UI script, now try to get its source
+                        local func = debug.getinfo(i, "f").func
+                        local lines = debug.getlines(func)
+                        if lines then
+                            uiScriptSource = table.concat(lines, "\n")
+                        end
+                        break
+                    end
+                end
+            end)
             
-            -- Check if the script name contains our expected name
-            local hasCorrectScriptName = scriptName:find("Lurnai") ~= nil
-            
-            -- Check if the script is being loaded from the correct context
-            local loadedFromCorrectContext = 
-                isLurnai and isHavoc and (hasFluentUI or hasCorrectTitle or hasCorrectScriptName)
-            
-            if not loadedFromCorrectContext then
-                floodConsole()
-                return false
+            -- If we couldn't get the source directly, try to check the environment
+            if uiScriptSource == "" then
+                -- Try to check if the verification markers are in the environment
+                local env = getfenv(2)
+                local envStr = tostring(env)
+                
+                -- Check if at least some markers are in the environment string
+                local markerCount = 0
+                for _, marker in ipairs(requiredMarkers) do
+                    if envStr:find(marker:gsub("%-", "%%-")) then
+                        markerCount = markerCount + 1
+                    end
+                end
+                
+                -- If we found at least 25 markers, consider it valid
+                if markerCount >= 25 then
+                    return true
+                end
+                
+                -- Check the call stack as a last resort
+                local markerCount = 0
+                for _, marker in ipairs(requiredMarkers) do
+                    if callStack:find(marker:gsub("%-", "%%-")) then
+                        markerCount = markerCount + 1
+                    end
+                end
+                
+                -- If we found at least 25 markers in the call stack, consider it valid
+                return markerCount >= 25
             end
             
-            return true
+            -- Check if at least 25 required markers are in the UI script source
+            local markerCount = 0
+            for _, marker in ipairs(requiredMarkers) do
+                if uiScriptSource:find(marker:gsub("%-", "%%-")) then
+                    markerCount = markerCount + 1
+                end
+            end
+            
+            return markerCount >= 25
         end)
         
         return success and result
     end
     
-    -- Generate a unique key based on the environment
-    local function generateAuthKey()
-        local env = originalEnvFunctions.getfenv(2)
-        local authComponents = {
-            os.time(),
-            tostring(env),
-            SECURITY.AUTH_KEY,
-            instanceId
-        }
-        
-        local authString = table.concat(authComponents, "_")
-        local authKey = ""
-        
-        for i = 1, #authString do
-            authKey = authKey .. string.char(string.byte(authString:sub(i,i)) + 3)
-        end
-        
-        return authKey
-    end
-    
-    -- Check if environment is valid
-    if not verifyEnvironment() or not isAuthorizedLoader() then
-        floodConsole()
-        -- Return a fake "broken" calculator that appears to be non-functional
-        return {
-            CalculateRock = function() 
-                floodConsole()
-                return "Calculator is currently experiencing issues. Please try again later."
-            end,
-            Rocks = {},
-            PetTypes = {},
-            _isBroken = true, -- Flag to indicate this is a fake broken version
-            VerifyAuthenticity = function() return false end
-        }
-    end
-    
-    -- Create a secure environment for data
-    local secureEnv = {}
-    
-    -- Actual calculator data (obfuscated for additional security)
-    local realData = {
-        PetTypes = {
-            Unique = {0, 1250, 3750, 7500, 12500, 18750, 26250, 35000, 45000, 56250, 68750, 82500, 97500, 113750, 131250, 150000, 170000, 191250, 213750, 237500},
-            Epic = {0, 1000, 3000, 6000, 10000, 15000, 21000, 28000, 36000, 45000, 55000, 66000, 78000, 91000, 105000, 120000, 136000, 153000, 171000, 190000, 210000},
-            Rare = {0, 750, 2250, 4500, 7500, 11250, 15750, 21000, 27000, 33750, 41250, 49500, 58500, 68250, 78750, 90000, 102000, 114750, 128250, 142500, 157500},
-            Advanced = {0, 500, 1500, 3000, 5000, 7500, 10500, 14000, 18000, 22500, 27500, 33000, 39000, 45500, 52500, 60000, 68000, 76500, 85500, 95000, 105000},
-            Basic = {0, 250, 750, 1500, 2500, 3750, 5250, 7000, 9000, 11250, 13750, 16500, 19500, 22750, 26250, 30000, 34000, 38250, 42750, 47500, 52500},
-            ["Unique Aura"] = {0, 3000, 7500, 13500, 21000, 30000, 40500, 52500, 66000, 81000, 97500, 115500, 135000, 156000, 178500, 202500, 228000, 255000, 283500, 313500, 345000}
-        },
-        Rocks = {
-            { name = 'Jungle Rock', multiplier = 16.25 },
-            { name = 'Muscle King Rock', multiplier = 12.5 },
-            { name = 'Legends Rock', multiplier = 2.5 },
-            { name = 'Inferno Rock', multiplier = 1.125 },
-            { name = 'Mystic Rock', multiplier = 0.75 },
-            { name = 'Frozen Rock', multiplier = 0.375 },
-            { name = 'Golden Rock', multiplier = 0.2 },
-            { name = 'Large Rock', multiplier = 0.075 },
-            { name = 'Punching Rock', multiplier = 0.05 },
-            { name = 'Tiny Rock', multiplier = 0.025 }
-        }
-    }
-    
-    -- Add security identifiers
-    module._lurnaiAuthKey = generateAuthKey()
-    module._loadTime = os.time()
-    module._verificationHash = string.format("%x", generateHash(instanceId .. SECURITY.AUTH_KEY))
-    module._isBroken = false -- Flag to indicate this is the real version
-    module._instanceId = instanceId
-    
-    -- Create proxy tables to prevent direct access to data
-    local proxyMetatable = {
-        __index = function(t, k)
-            local callStack = originalEnvFunctions.debug.traceback()
-            if not callStack:find("Lurnai") then
-                floodConsole()
-                return nil
-            end
-            return originalMetamethods.rawget(secureEnv, k)
-        end,
-        __newindex = function(t, k, v)
-            floodConsole()
-            return nil
-        end,
-        __metatable = "Locked metatable"
-    }
-    
-    -- Set up the proxies
-    secureEnv.PetTypes = {}
-    secureEnv.Rocks = {}
-    
-    -- Copy data to secure environment
-    for k, v in pairs(realData.PetTypes) do
-        secureEnv.PetTypes[k] = v
-    end
-    
-    for i, v in ipairs(realData.Rocks) do
-        secureEnv.Rocks[i] = v
-    end
-    
-    -- Create a hash of the original data for integrity checking
-    local dataHash = generateHash(tostring(realData))
-    module._dataIntegrityHash = dataHash
-    
-    -- Expose the data through proxies with additional security
-    module.PetTypes = originalMetamethods.setmetatable({}, {
-        __index = function(t, k)
-            -- Verify environment hasn't been tampered with
-            if not verifyEnvironment() then
-                floodConsole()
-                return nil
-            end
-            
-            local callStack = originalEnvFunctions.debug.traceback()
-            if not callStack:find("Lurnai") or not callStack:find(SECURITY.AUTHOR) then
-                floodConsole()
-                return nil
-            end
-            
-            -- Verify data integrity
-            if generateHash(tostring(realData)) ~= dataHash then
-                floodConsole()
-                return nil
-            end
-            
-            return secureEnv.PetTypes[k]
-        end,
-        __newindex = function() floodConsole() end,
-        __metatable = "Locked metatable"
-    })
-    
-    module.Rocks = originalMetamethods.setmetatable({}, {
-        __index = function(t, k)
-            -- Verify environment hasn't been tampered with
-            if not verifyEnvironment() then
-                floodConsole()
-                return nil
-            end
-            
-            local callStack = originalEnvFunctions.debug.traceback()
-            if not callStack:find("Lurnai") or not callStack:find(SECURITY.AUTHOR) then
-                floodConsole()
-                return nil
-            end
-            
-            -- Verify data integrity
-            if generateHash(tostring(realData)) ~= dataHash then
-                floodConsole()
-                return nil
-            end
-            
-            return secureEnv.Rocks[k]
-        end,
-        __newindex = function() floodConsole() end,
-        __metatable = "Locked metatable",
-        __len = function() 
-            if not verifyEnvironment() then
-                floodConsole()
-                return 0
-            end
-            return #secureEnv.Rocks 
-        end,
-        __pairs = function(t)
-            if not verifyEnvironment() then
-                floodConsole()
-                return function() return nil end
-            end
-            
-            local callStack = originalEnvFunctions.debug.traceback()
-            if not callStack:find("Lurnai") or not callStack:find(SECURITY.AUTHOR) then
-                floodConsole()
-                return function() return nil end
-            end
-            
-            local i = 0
-            return function()
-                i = i + 1
-                if i <= #secureEnv.Rocks then
-                    return i, secureEnv.Rocks[i]
-                end
-            end
-        end,
-        __ipairs = function(t)
-            if not verifyEnvironment() then
-                floodConsole()
-                return function() return nil end
-            end
-            
-            local callStack = originalEnvFunctions.debug.traceback()
-            if not callStack:find("Lurnai") or not callStack:find(SECURITY.AUTHOR) then
-                floodConsole()
-                return function() return nil end
-            end
-            
-            local i = 0
-            return function()
-                i = i + 1
-                if i <= #secureEnv.Rocks then
-                    return i, secureEnv.Rocks[i]
-                end
-            end
-        end
-    })
-    
-    -- The calculation function with enhanced security
-    function module:CalculateRock(rebirths, rockName, petType)
-        -- Verify environment hasn't been tampered with
-        if not verifyEnvironment() then
-            floodConsole()
-            return "Access denied: Environment compromised"
-        end
-        
-        -- Check if being called from the right context
-        local callStack = originalEnvFunctions.debug.traceback()
-        if not callStack:find("Lurnai") or not callStack:find(SECURITY.AUTHOR) then
-            floodConsole()
-            return "Access denied: Unauthorized caller"
-        end
-        
-        -- Verify the auth key hasn't been tampered with
-        if not self._lurnaiAuthKey or self._lurnaiAuthKey:len() < 10 then
-            floodConsole()
-            return "Authentication failed: Invalid key"
-        end
-        
-        -- Verify data integrity
-        if generateHash(tostring(realData)) ~= dataHash then
-            floodConsole()
-            return "Data integrity check failed"
-        end
-        
-        -- Verify this module hasn't been renamed
-        local info = originalEnvFunctions.debug.getinfo(1, "f")
-        if info and info.func ~= module.CalculateRock then
-            floodConsole()
-            return "Function integrity check failed"
-        end
-        
-        local multiplier = nil
-        for _, rock in ipairs(secureEnv.Rocks) do
-            if rock.name == rockName then
-                multiplier = rock.multiplier
-                break
-            end
-        end
-        
-        if not multiplier then
-            return "Rock not found"
-        end
-        
-        local xpLevels = secureEnv.PetTypes[petType]
-        if not xpLevels then
-            return "Pet type not found"
-        end
-        
-        -- Calculate total XP based on rebirths and rock multiplier
-        local total = (rebirths + 20) * multiplier
-        
-        -- Check if total has a decimal part
-        if total ~= math.floor(total) then
-            return "Not Glitchable"
-        end
-        
-        -- Check if total exceeds max level
-        if total > xpLevels[#xpLevels] then
-            return "Not Glitchable"
-        end
-        
-        -- Check if total is exactly one of the XP levels (perfect level up)
-        for i, xp in ipairs(xpLevels) do
-            if total == xp then
-                return "Level 1, 0xp"
-            end
-        end
-        
-        -- Find the next XP level
-        local nextXP = nil
-        for i, xp in ipairs(xpLevels) do
-            if xp > total then
-                nextXP = xp
-                break
-            end
-        end
-        
-        if not nextXP then
-            return "Not Glitchable"
-        end
-        
-        -- Calculate the first difference
-        local firstDiff = nextXP - total
-        
-        -- Find the level based on where firstDiff falls in the XP levels
-        local level = 1
-        for i, xp in ipairs(xpLevels) do
-            if firstDiff <= xp then
-                level = i - 1
-                break
-            end
-        end
-        
-        -- Calculate the remaining XP
-        local baseXP = 0
-        if level > 0 and level < #xpLevels then
-            baseXP = xpLevels[level]
-        end
-        
-        local remainingXP = math.floor(firstDiff - baseXP)
-        
-        return "Level " .. level .. ", " .. remainingXP .. "xp"
-    end
-    
-    -- Add a verification method that the UI can call
+    -- Verify authenticity of the script
     function module:VerifyAuthenticity()
         -- Verify environment hasn't been tampered with
         if not verifyEnvironment() then
@@ -437,8 +243,8 @@ local Calculator = (function()
             return false
         end
         
-        local callStack = originalEnvFunctions.debug.traceback()
-        if not callStack:find("Lurnai") or not callStack:find(SECURITY.AUTHOR) then
+        -- Verify UI script contains required verification markers
+        if not verifyUIScript() then
             floodConsole()
             return false
         end
@@ -456,75 +262,52 @@ local Calculator = (function()
             return false
         end
         
-        return true
-    end
-    
-    -- Add a self-check method that runs periodically
-    function module:SelfCheck()
-        -- Verify environment hasn't been tampered with
-        if not verifyEnvironment() then
-            -- Corrupt this module to prevent further use
-            for k, v in pairs(module) do
-                if type(v) == "function" then
-                    module[k] = function() 
-                        floodConsole()
-                        return "Access denied: Module corrupted"
-                    end
-                elseif type(v) == "table" then
-                    module[k] = {}
-                end
-            end
+        -- Verify the module was loaded recently
+        if os.time() - _internal.loadTime > 60 then
+            floodConsole()
             return false
-        end
-        
-        -- Verify data integrity
-        if generateHash(tostring(realData)) ~= dataHash then
-            -- Corrupt this module to prevent further use
-            for k, v in pairs(module) do
-                if type(v) == "function" then
-                    module[k] = function() 
-                        floodConsole()
-                        return "Access denied: Module corrupted"
-                    end
-                elseif type(v) == "table" then
-                    module[k] = {}
-                end
-            end
-            return false
-        end
+        }
         
         return true
     end
     
-    -- Prevent the calculator from being modified
-    originalMetamethods.setmetatable(module, {
-        __index = function(t, k)
-            if k == "CalculateRock" or k == "VerifyAuthenticity" or k == "SelfCheck" or
-               k == "PetTypes" or k == "Rocks" or k == "_isBroken" or
-               k == "_lurnaiAuthKey" or k == "_loadTime" or k == "_verificationHash" or
-               k == "_instanceId" or k == "_dataIntegrityHash" then
-                return originalMetamethods.rawget(t, k)
-            end
-            floodConsole()
-            return nil
-        end,
-        __newindex = function(t, k, v)
-            floodConsole()
-            return nil
-        end,
-        __metatable = "Locked metatable"
-    })
-    
-    -- Schedule periodic self-checks
-    spawn(function()
-        while true do
-            wait(5)  -- Check every 5 seconds
-            if not module:SelfCheck() then
-                break  -- Stop checking if corruption is detected
+    -- Calculate rock values
+    function module:CalculateRock(rebirths, rockName, petType)
+        -- Verify authenticity before calculating
+        if not self:VerifyAuthenticity() then
+            return "Verification failed. Please reload the script."
+        }
+        
+        -- Find the rock by name
+        local selectedRock = nil
+        for _, rock in ipairs(self.Rocks) do
+            if rock.name == rockName then
+                selectedRock = rock
+                break
             end
         end
-    end)
+        
+        if not selectedRock then
+            return "Invalid rock selected"
+        end
+        
+        -- Get pet multiplier
+        local petMultiplier = self.PetTypes[petType] or 1
+        
+        -- Calculate base value
+        local baseValue = 100 * selectedRock.multiplier
+        
+        -- Apply rebirth bonus (5% per rebirth)
+        local rebirthBonus = 1 + (rebirths * 0.05)
+        
+        -- Apply pet multiplier
+        local finalValue = baseValue * rebirthBonus * petMultiplier
+        
+        -- Format the result
+        return string.format("Rock Value: %.2f strength", finalValue)
+    end
     
+    -- Return the module
     return module
 end)()
 
