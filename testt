@@ -1,28 +1,7 @@
 -- Protected Calculator for Lurnai UI
 local Calculator = {}
 
--- Check if this is being loaded by the authorized UI
-local function isAuthorizedLoader()
-    local success, result = pcall(function()
-        -- Check for specific UI elements that should only exist in the authorized UI
-        local callStack = debug.traceback()
-        return callStack:find("Lurnai") ~= nil and 
-               callStack:find("By Havoc") ~= nil
-    end)
-    
-    return success and result
-end
-
--- Only initialize if loaded by the authorized UI
-if not isAuthorizedLoader() then
-    return {
-        CalculateRock = function() 
-            return "Unauthorized access detected"
-        end
-    }
-end
-
--- Store the data directly without encryption for now to fix the error
+-- Store the data directly
 Calculator.PetTypes = {
     Unique = {0, 1250, 3750, 7500, 12500, 18750, 26250, 35000, 45000, 56250, 68750, 82500, 97500, 113750, 131250, 150000, 170000, 191250, 213750, 237500},
     Epic = {0, 1000, 3000, 6000, 10000, 15000, 21000, 28000, 36000, 45000, 55000, 66000, 78000, 91000, 105000, 120000, 136000, 153000, 171000, 190000, 210000},
@@ -50,11 +29,6 @@ Calculator._lurnaiAuthKey = "havoc_lurnai_" .. tostring(os.time())
 
 -- The calculation function
 function Calculator:CalculateRock(rebirths, rockName, petType)
-    -- Add an additional check here
-    if not self._lurnaiAuthKey or self._lurnaiAuthKey:sub(1, 12) ~= "havoc_lurnai_" then
-        return "Unauthorized access"
-    end
-
     local multiplier = nil
     for _, rock in ipairs(self.Rocks) do
         if rock.name == rockName then
@@ -130,22 +104,7 @@ end
 
 -- Add a verification method that the UI can call
 function Calculator:VerifyAuthenticity()
-    return self._lurnaiAuthKey ~= nil
-end
-
--- Add a timestamp to detect tampering
-Calculator._loadTime = os.time()
-
--- Add some obfuscation to make it harder to extract the data
-local originalCalculateRock = Calculator.CalculateRock
-Calculator.CalculateRock = function(self, rebirths, rockName, petType)
-    -- Check if being called from the right context
-    local callStack = debug.traceback()
-    if not callStack:find("Lurnai") then
-        return "Access denied"
-    end
-    
-    return originalCalculateRock(self, rebirths, rockName, petType)
+    return true
 end
 
 return Calculator
