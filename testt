@@ -1,3 +1,5 @@
+Calculator = {}
+
 Calculator.PetTypes = {
     Unique = {0, 1250, 3750, 7500, 12500, 18750, 26250, 35000, 45000, 56250, 68750, 82500, 97500, 113750, 131250, 150000, 170000, 191250, 213750, 237500},
     Epic = {0, 1000, 3000, 6000, 10000, 15000, 21000, 28000, 36000, 45000, 55000, 66000, 78000, 91000, 105000, 120000, 136000, 153000, 171000, 190000, 210000},
@@ -41,23 +43,20 @@ function Calculator:CalculateRock(rebirths, rockName, petType)
     -- Calculate total XP based on rebirths and rock multiplier
     local total = (rebirths + 20) * multiplier
     
-    -- Format the result string with rock, rebirth, and pet type info
-    local resultPrefix = "Calculation Results\n" .. rockName .. " | Rebirth " .. rebirths .. " | " .. petType .. "\n"
-    
     -- Check if total has a decimal part
     if total ~= math.floor(total) then
-        return resultPrefix .. "Not Glitchable\nStrength needed to rebirth: 25000"
+        return "Not Glitchable"
     end
     
     -- Check if total exceeds max level
     if total > xpLevels[#xpLevels] then
-        return resultPrefix .. "Not Glitchable\nStrength needed to rebirth: 25000"
+        return "Not Glitchable"
     end
     
     -- Check if total is exactly one of the XP levels (perfect level up)
     for i, xp in ipairs(xpLevels) do
         if total == xp then
-            return resultPrefix .. "Level 1, 0xp"
+            return "Level 1, 0xp"
         end
     end
     
@@ -71,7 +70,7 @@ function Calculator:CalculateRock(rebirths, rockName, petType)
     end
     
     if not nextXP then
-        return resultPrefix .. "Not Glitchable\nStrength needed to rebirth: 25000"
+        return "Not Glitchable"
     end
     
     -- Calculate the first difference
@@ -94,7 +93,7 @@ function Calculator:CalculateRock(rebirths, rockName, petType)
     
     local remainingXP = math.floor(firstDiff - baseXP)
     
-    return resultPrefix .. "Level " .. level .. ", " .. remainingXP .. "xp"
+    return "Level " .. level .. ", " .. remainingXP .. "xp"
 end
 
 return Calculator
