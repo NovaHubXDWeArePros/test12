@@ -7,8 +7,7 @@ local function isAuthorizedLoader()
         -- Check for specific UI elements that should only exist in the authorized UI
         local callStack = debug.traceback()
         return callStack:find("Lurnai") ~= nil and 
-               callStack:find("By Havoc") ~= nil and
-               callStack:find("Fluent%-Renewed") ~= nil
+               callStack:find("By Havoc") ~= nil
     end)
     
     return success and result
@@ -23,69 +22,28 @@ if not isAuthorizedLoader() then
     }
 end
 
--- Obfuscate data with a simple encryption
-local function encrypt(tbl)
-    local result = {}
-    for k, v in pairs(tbl) do
-        if type(v) == "table" then
-            result[k] = encrypt(v)
-        elseif type(v) == "number" then
-            result[k] = v * 1.5 + 7  -- Simple encryption
-        else
-            result[k] = v
-        end
-    end
-    return result
-end
-
--- Decrypt the data when needed
-local function decrypt(tbl)
-    local result = {}
-    for k, v in pairs(tbl) do
-        if type(v) == "table" then
-            result[k] = decrypt(v)
-        elseif type(v) == "number" then
-            result[k] = (v - 7) / 1.5  -- Simple decryption
-        else
-            result[k] = v
-        end
-    end
-    return result
-end
-
--- Encrypted data
-local encryptedData = {
-    PetTypes = {
-        Unique = encrypt({0, 1250, 3750, 7500, 12500, 18750, 26250, 35000, 45000, 56250, 68750, 82500, 97500, 113750, 131250, 150000, 170000, 191250, 213750, 237500}),
-        Epic = encrypt({0, 1000, 3000, 6000, 10000, 15000, 21000, 28000, 36000, 45000, 55000, 66000, 78000, 91000, 105000, 120000, 136000, 153000, 171000, 190000, 210000}),
-        Rare = encrypt({0, 750, 2250, 4500, 7500, 11250, 15750, 21000, 27000, 33750, 41250, 49500, 58500, 68250, 78750, 90000, 102000, 114750, 128250, 142500, 157500}),
-        Advanced = encrypt({0, 500, 1500, 3000, 5000, 7500, 10500, 14000, 18000, 22500, 27500, 33000, 39000, 45500, 52500, 60000, 68000, 76500, 85500, 95000, 105000}),
-        Basic = encrypt({0, 250, 750, 1500, 2500, 3750, 5250, 7000, 9000, 11250, 13750, 16500, 19500, 22750, 26250, 30000, 34000, 38250, 42750, 47500, 52500}),
-        ["Unique Aura"] = encrypt({0, 3000, 7500, 13500, 21000, 30000, 40500, 52500, 66000, 81000, 97500, 115500, 135000, 156000, 178500, 202500, 228000, 255000, 283500, 313500, 345000})
-    },
-    Rocks = encrypt({
-        { name = 'Jungle Rock', multiplier = 16.25 },
-        { name = 'Muscle King Rock', multiplier = 12.5 },
-        { name = 'Legends Rock', multiplier = 2.5 },
-        { name = 'Inferno Rock', multiplier = 1.125 },
-        { name = 'Mystic Rock', multiplier = 0.75 },
-        { name = 'Frozen Rock', multiplier = 0.375 },
-        { name = 'Golden Rock', multiplier = 0.2 },
-        { name = 'Large Rock', multiplier = 0.075 },
-        { name = 'Punching Rock', multiplier = 0.05 },
-        { name = 'Tiny Rock', multiplier = 0.025 }
-    })
+-- Store the data directly without encryption for now to fix the error
+Calculator.PetTypes = {
+    Unique = {0, 1250, 3750, 7500, 12500, 18750, 26250, 35000, 45000, 56250, 68750, 82500, 97500, 113750, 131250, 150000, 170000, 191250, 213750, 237500},
+    Epic = {0, 1000, 3000, 6000, 10000, 15000, 21000, 28000, 36000, 45000, 55000, 66000, 78000, 91000, 105000, 120000, 136000, 153000, 171000, 190000, 210000},
+    Rare = {0, 750, 2250, 4500, 7500, 11250, 15750, 21000, 27000, 33750, 41250, 49500, 58500, 68250, 78750, 90000, 102000, 114750, 128250, 142500, 157500},
+    Advanced = {0, 500, 1500, 3000, 5000, 7500, 10500, 14000, 18000, 22500, 27500, 33000, 39000, 45500, 52500, 60000, 68000, 76500, 85500, 95000, 105000},
+    Basic = {0, 250, 750, 1500, 2500, 3750, 5250, 7000, 9000, 11250, 13750, 16500, 19500, 22750, 26250, 30000, 34000, 38250, 42750, 47500, 52500},
+    ["Unique Aura"] = {0, 3000, 7500, 13500, 21000, 30000, 40500, 52500, 66000, 81000, 97500, 115500, 135000, 156000, 178500, 202500, 228000, 255000, 283500, 313500, 345000}
 }
 
--- Create a metatable to handle data access
-local mt = {
-    __index = function(t, k)
-        if k == "PetTypes" or k == "Rocks" then
-            return decrypt(encryptedData[k])
-        end
-    end
+Calculator.Rocks = {
+    { name = 'Jungle Rock', multiplier = 16.25 },
+    { name = 'Muscle King Rock', multiplier = 12.5 },
+    { name = 'Legends Rock', multiplier = 2.5 },
+    { name = 'Inferno Rock', multiplier = 1.125 },
+    { name = 'Mystic Rock', multiplier = 0.75 },
+    { name = 'Frozen Rock', multiplier = 0.375 },
+    { name = 'Golden Rock', multiplier = 0.2 },
+    { name = 'Large Rock', multiplier = 0.075 },
+    { name = 'Punching Rock', multiplier = 0.05 },
+    { name = 'Tiny Rock', multiplier = 0.025 }
 }
-setmetatable(Calculator, mt)
 
 -- Add a unique identifier that the UI can check
 Calculator._lurnaiAuthKey = "havoc_lurnai_" .. tostring(os.time())
@@ -97,10 +55,8 @@ function Calculator:CalculateRock(rebirths, rockName, petType)
         return "Unauthorized access"
     end
 
-    local rocks = decrypt(encryptedData.Rocks)
     local multiplier = nil
-    
-    for _, rock in ipairs(rocks) do
+    for _, rock in ipairs(self.Rocks) do
         if rock.name == rockName then
             multiplier = rock.multiplier
             break
@@ -111,9 +67,7 @@ function Calculator:CalculateRock(rebirths, rockName, petType)
         return "Rock not found"
     end
     
-    local petTypes = decrypt(encryptedData.PetTypes)
-    local xpLevels = petTypes[petType]
-    
+    local xpLevels = self.PetTypes[petType]
     if not xpLevels then
         return "Pet type not found"
     end
@@ -181,5 +135,17 @@ end
 
 -- Add a timestamp to detect tampering
 Calculator._loadTime = os.time()
+
+-- Add some obfuscation to make it harder to extract the data
+local originalCalculateRock = Calculator.CalculateRock
+Calculator.CalculateRock = function(self, rebirths, rockName, petType)
+    -- Check if being called from the right context
+    local callStack = debug.traceback()
+    if not callStack:find("Lurnai") then
+        return "Access denied"
+    end
+    
+    return originalCalculateRock(self, rebirths, rockName, petType)
+end
 
 return Calculator
